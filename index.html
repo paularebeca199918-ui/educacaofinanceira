@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Miniguia de Educação Financeira com NotebookLM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F1F4F2; --surface:#FFFFFF; --ink:#14222B; --muted:#55656E; --line:#D3DCD8;
+  --accent:#0E5A4A; --accent-soft:#DCEBE6; --gold:#A86A0C; --contrib:#6B7C86;
+  --sans:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --serif:'Source Serif 4',Georgia,'Times New Roman',serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10191D; --surface:#172329; --ink:#E6EEEB; --muted:#9AAAA8; --line:#2A3A40;
+    --accent:#5FD0AE; --accent-soft:#1B3A34; --gold:#E0A94A; --contrib:#8FA1AA;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10191D; --surface:#172329; --ink:#E6EEEB; --muted:#9AAAA8; --line:#2A3A40;
+  --accent:#5FD0AE; --accent-soft:#1B3A34; --gold:#E0A94A; --contrib:#8FA1AA;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);font-size:18px;line-height:1.65}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+h1,h2,h3{font-family:var(--sans);line-height:1.15;margin:0;color:var(--ink)}
+h1{font-size:clamp(2.2rem,5.5vw,3.8rem);font-weight:800;letter-spacing:-.02em;max-width:16ch}
+h2{font-size:clamp(1.6rem,3vw,2.1rem);font-weight:800;letter-spacing:-.01em;margin-bottom:.6rem}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0 0 1em;max-width:68ch}
+.lead{font-size:1.2rem;color:var(--muted);max-width:56ch;margin-top:1.1rem}
+
+/* topo */
+header.top{padding:56px 0 32px}
+.themebtn{float:right;font:600 .85rem var(--sans);background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer}
+.themebtn:hover{color:var(--ink);border-color:var(--muted)}
+
+/* simulador */
+.sim{background:var(--surface);border:1px solid var(--line);border-radius:14px;display:grid;grid-template-columns:320px 1fr;overflow:hidden;margin-bottom:8px}
+.sim-controls{padding:24px;border-right:1px solid var(--line);display:grid;gap:16px;align-content:start}
+.sim-title{font:800 1.1rem var(--sans)}
+.ctl label{display:flex;justify-content:space-between;font:600 .9rem var(--sans);margin-bottom:4px}
+.ctl output{color:var(--accent);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.sim-out{padding:24px;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+.stat{min-width:0}
+.stat b{display:block;font:800 1.35rem var(--sans);font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat span{font:400 .82rem var(--sans);color:var(--muted)}
+.stat.main b{color:var(--accent)}
+.stat.real b{color:var(--gold)}
+svg.chart{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 20px;font:400 .85rem var(--sans);color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:22px;height:0;border-top:3px solid;vertical-align:middle;margin-right:6px}
+.note{font:400 .82rem var(--sans);color:var(--muted);margin:14px 0 0}
+
+/* navegação */
+nav.sticky{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);margin-top:28px}
+nav.sticky .wrap{display:flex;gap:4px;overflow-x:auto;padding-top:8px;padding-bottom:8px}
+nav.sticky a{font:600 .92rem var(--sans);text-decoration:none;color:var(--muted);padding:6px 12px;border-radius:999px;white-space:nowrap}
+nav.sticky a:hover{color:var(--ink);background:var(--accent-soft)}
+
+section{padding:56px 0 8px}
+ul.clean{padding-left:1.2em;margin:0 0 1em}
+ul.clean li{margin-bottom:.35em;max-width:68ch}
+
+/* tabelas */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .9rem var(--sans);background:var(--accent-soft);color:var(--ink)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-family:var(--sans);font-weight:600;white-space:nowrap}
+.gloss td:first-child{white-space:normal;min-width:150px}
+
+/* campos a preencher */
+.todo{border:1.5px dashed var(--gold);color:var(--muted);background:transparent;border-radius:8px;padding:8px 12px;font:italic .92rem var(--serif);display:block;margin:6px 0}
+.warn{border-left:4px solid var(--gold);background:var(--surface);padding:14px 18px;border-radius:0 10px 10px 0;font-size:.98rem;max-width:72ch;margin:0 0 20px}
+
+/* acordeões */
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
+summary{cursor:pointer;padding:16px 20px;font:600 1.05rem var(--sans);list-style:none;display:flex;justify-content:space-between;gap:12px;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:1.4rem;color:var(--accent);line-height:1}
+details[open] summary::after{content:"\2212"}
+details .body{padding:0 20px 14px}
+.test-label{font:600 .85rem var(--sans);color:var(--accent);margin-top:12px;display:block}
+.test-body{margin:2px 0}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+
+/* glossário */
+.search{width:100%;max-width:420px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:400 1rem var(--sans);margin-bottom:14px}
+.empty{display:none;padding:16px;color:var(--muted);font:400 .95rem var(--sans)}
+
+/* prompts */
+.prompts{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.prompt{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.prompt header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.prompt h3{font-size:1rem}
+.prompt pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 .92rem/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink);background:var(--bg);border-radius:8px;padding:12px}
+.copy{font:600 .82rem var(--sans);background:var(--accent);color:var(--surface);border:0;border-radius:8px;padding:6px 12px;cursor:pointer;min-width:74px}
+.copy:hover{filter:brightness(1.1)}
+
+footer{margin-top:64px;border-top:1px solid var(--line);padding:32px 0 56px;color:var(--muted);font:400 .92rem var(--sans)}
+
+@media (max-width:820px){
+  body{font-size:17px}
+  .sim{grid-template-columns:1fr}
+  .sim-controls{border-right:0;border-bottom:1px solid var(--line)}
+  .stats{grid-template-columns:1fr 1fr}
+  .cols2,.prompts{grid-template-columns:1fr}
+  header.top{padding-top:40px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <button class="themebtn" id="themeBtn" type="button" aria-label="Alternar tema claro ou escuro">Tema</button>
+    <h1>Educação financeira, do orçamento ao investimento</h1>
+    <p class="lead">Miniguia de estudos criado com o NotebookLM a partir de fontes abertas. Comece pelo simulador: ele mostra por que o tempo pesa tanto nas finanças pessoais.</p>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <div class="sim" aria-labelledby="simTitle">
+    <div class="sim-controls">
+      <div class="sim-title" id="simTitle">Simulador de juros compostos</div>
+      <div class="ctl"><label for="inicial">Valor inicial <output id="o-inicial"></output></label><input id="inicial" type="range" min="0" max="100000" step="500" value="1000"></div>
+      <div class="ctl"><label for="aporte">Aporte mensal <output id="o-aporte"></output></label><input id="aporte" type="range" min="0" max="5000" step="50" value="300"></div>
+      <div class="ctl"><label for="taxa">Rentabilidade anual <output id="o-taxa"></output></label><input id="taxa" type="range" min="0" max="20" step="0.5" value="10"></div>
+      <div class="ctl"><label for="infl">Inflação anual <output id="o-infl"></output></label><input id="infl" type="range" min="0" max="15" step="0.5" value="4.5"></div>
+      <div class="ctl"><label for="anos">Prazo <output id="o-anos"></output></label><input id="anos" type="range" min="1" max="40" step="1" value="20"></div>
+    </div>
+    <div class="sim-out">
+      <div class="stats" aria-live="polite">
+        <div class="stat"><b id="s-invest">–</b><span>Total investido</span></div>
+        <div class="stat"><b id="s-juros">–</b><span>Juros acumulados</span></div>
+        <div class="stat main"><b id="s-final">–</b><span>Valor final</span></div>
+        <div class="stat real"><b id="s-real">–</b><span>Valor final em poder de compra de hoje</span></div>
+      </div>
+      <svg class="chart" id="chart" viewBox="0 0 640 300" role="img" aria-label="Gráfico da evolução do patrimônio ao longo do prazo"></svg>
+      <div class="legend">
+        <span><i style="border-color:var(--accent)"></i>Patrimônio</span>
+        <span><i style="border-color:var(--contrib)"></i>Total investido</span>
+        <span><i style="border-color:var(--gold);border-top-style:dashed"></i>Patrimônio corrigido pela inflação</span>
+      </div>
+      <p class="note">Simulação ilustrativa com capitalização mensal. As taxas são valores de exemplo, não previsões nem recomendação de investimento.</p>
+    </div>
+  </div>
+</div>
+
+<nav class="sticky" aria-label="Seções">
+  <div class="wrap">
+    <a href="#contexto">Contexto</a>
+    <a href="#fontes">Fontes</a>
+    <a href="#prompts-testes">Testes de prompts</a>
+    <a href="#resumos">Resumos</a>
+    <a href="#glossario">Glossário</a>
+    <a href="#reutilizaveis">Prompts reutilizáveis</a>
+    <a href="#reflexoes">Reflexões</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<section id="contexto">
+  <h2>Contexto e objetivos</h2>
+  <p>Educação financeira é uma habilidade que serve para a vida pessoal e para a carreira: organizar o orçamento, evitar dívidas caras, montar uma reserva e começar a investir com consciência. Escolhi o tema porque há muito material aberto e confiável de órgãos oficiais para servir de base.</p>
+  <div class="cols2">
+    <div>
+      <h3>Objetivos de estudo</h3>
+      <ul class="clean">
+        <li>Entender os fundamentos de finanças pessoais: orçamento, reserva de emergência e dívidas.</li>
+        <li>Compreender juros compostos, inflação e a relação entre risco e retorno.</li>
+        <li>Conhecer os tipos de investimento e o papel do perfil de investidor.</li>
+        <li>Criar prompts reutilizáveis para revisões futuras.</li>
+        <li>Praticar pensamento crítico, validando as respostas da IA contra as fontes.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Como usei o NotebookLM</h3>
+      <p>Carreguei as fontes no caderno, fiz perguntas com variações de prompt, conferi as citações de cada resposta e consolidei o resultado neste guia.</p>
+      <p class="todo">Personalize: conte em uma frase como foi o seu processo.</p>
+    </div>
+  </div>
+</section>
+
+<section id="fontes">
+  <h2>Curadoria de fontes</h2>
+  <p>Fontes abertas, de instituições oficiais, carregadas no NotebookLM. Critério: material público, atualizado, em português e de órgão regulador ou governamental.</p>
+  <div class="warn">Antes de entregar: abra cada página, escolha o PDF que você de fato enviou ao NotebookLM e troque pelo link direto. Confirme que os links ainda funcionam.</div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Fonte</th><th>Instituição</th><th>Link</th></tr></thead>
+      <tbody>
+        <tr><td>Caderno de Educação Financeira: Gestão de Finanças Pessoais</td><td>Banco Central do Brasil</td><td><a href="https://www.bcb.gov.br/cidadaniafinanceira" target="_blank" rel="noopener">bcb.gov.br/cidadaniafinanceira</a></td></tr>
+        <tr><td>Cartilhas e materiais do Portal do Investidor</td><td>CVM</td><td><a href="https://www.gov.br/investidor/pt-br" target="_blank" rel="noopener">gov.br/investidor</a></td></tr>
+        <tr><td>Materiais da Estratégia Nacional de Educação Financeira (ENEF)</td><td>Vida e Dinheiro</td><td><a href="https://www.vidaedinheiro.gov.br" target="_blank" rel="noopener">vidaedinheiro.gov.br</a></td></tr>
+        <tr><td><span class="todo" style="margin:0">Fonte opcional</span></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="prompts-testes">
+  <h2>Engenharia de prompts e cicatrizes</h2>
+  <p>Esta seção deve refletir o que você testou de verdade. Deixei os prompts iniciais e os campos para preencher com os resultados reais e as dificuldades encontradas.</p>
+
+  <details open>
+    <summary>Teste 1: visão geral do tema</summary>
+    <div class="body">
+      <span class="test-label">Prompt v1</span><p class="test-body">Resuma os principais conceitos de educação financeira presentes nas fontes.</p>
+      <span class="test-label">Problema encontrado</span><span class="todo">Ex.: resposta genérica demais.</span>
+      <span class="test-label">Prompt v2</span><p class="test-body">Atue como um professor de finanças pessoais. Com base apenas nas fontes, explique em 5 tópicos os fundamentos para um iniciante, citando de qual fonte vem cada ponto.</p>
+      <span class="test-label">Resultado e aprendizado</span><span class="todo">Cole ou resuma a resposta e registre o que mudou.</span>
+    </div>
+  </details>
+
+  <details>
+    <summary>Teste 2: juros compostos</summary>
+    <div class="body">
+      <span class="test-label">Prompt v1</span><p class="test-body">O que são juros compostos?</p>
+      <span class="test-label">Prompt v2</span><p class="test-body">Explique juros compostos com um exemplo numérico simples (R$ 1.000 a 1% ao mês por 12 meses), usando o que as fontes dizem sobre o tema.</p>
+      <span class="test-label">Resultado e verificação do cálculo</span><span class="todo">Confira a conta manualmente ou com o simulador acima.</span>
+    </div>
+  </details>
+
+  <details>
+    <summary>Teste 3: investimentos e risco</summary>
+    <div class="body">
+      <span class="test-label">Prompt v1</span><p class="test-body">Quais são os tipos de investimento?</p>
+      <span class="test-label">Prompt v2</span><p class="test-body">Monte uma tabela comparando renda fixa e renda variável em risco, liquidez, rentabilidade esperada e exemplos, com base nas fontes.</p>
+      <span class="test-label">Resultado e aprendizado</span><span class="todo">Preencha com o que aconteceu.</span>
+    </div>
+  </details>
+
+  <details>
+    <summary>Teste 4: verificação de alucinação</summary>
+    <div class="body">
+      <span class="test-label">Prompt</span><p class="test-body">Para cada afirmação da sua última resposta, indique o trecho da fonte que a sustenta. Se não houver, sinalize como "não encontrado nas fontes".</p>
+      <span class="test-label">Resultado</span><span class="todo">Preencha com o que aconteceu.</span>
+    </div>
+  </details>
+
+  <h3 style="margin:28px 0 12px">Cicatrizes</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Dificuldade</th><th>O que tentei</th><th>O que funcionou</th></tr></thead>
+      <tbody>
+        <tr><td><span class="todo" style="margin:0">Ex.: respostas rasas</span></td><td><span class="todo" style="margin:0">Ex.: perguntas abertas</span></td><td><span class="todo" style="margin:0">Ex.: pedir formato, público e nível de detalhe</span></td></tr>
+        <tr><td><span class="todo" style="margin:0">Ex.: informação fora das fontes</span></td><td><span class="todo" style="margin:0">...</span></td><td><span class="todo" style="margin:0">Ex.: "responda somente com base nas fontes"</span></td></tr>
+        <tr><td><span class="todo" style="margin:0">Ex.: taxas desatualizadas</span></td><td><span class="todo" style="margin:0">...</span></td><td><span class="todo" style="margin:0">Ex.: pedir a data da fonte</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="resumos">
+  <h2>Miniguia: resumos estruturados</h2>
+  <div class="warn">Este é um rascunho-base. Valide cada ponto contra as suas fontes no NotebookLM. Números e regras, como taxas e tributação, mudam com o tempo.</div>
+
+  <details open>
+    <summary>Orçamento e controle de gastos</summary>
+    <div class="body"><ul class="clean">
+      <li>Registrar receitas e despesas mostra para onde o dinheiro vai.</li>
+      <li>Despesas fixas (aluguel, mensalidades), variáveis (mercado, lazer) e eventuais (IPVA, manutenção).</li>
+      <li>A regra 50/30/20 (necessidades, desejos, poupança e dívidas) é um ponto de partida, não uma regra rígida.</li>
+      <li>Hábito-chave: acompanhar o orçamento periodicamente e ajustá-lo.</li>
+    </ul></div>
+  </details>
+  <details>
+    <summary>Reserva de emergência</summary>
+    <div class="body"><ul class="clean">
+      <li>Valor guardado para imprevistos como perda de renda, saúde ou reparos urgentes.</li>
+      <li>Referência comum: de 3 a 12 meses do custo de vida, conforme a estabilidade da renda.</li>
+      <li>Precisa de alta liquidez e baixo risco. Segurança vem antes de rentabilidade.</li>
+    </ul></div>
+  </details>
+  <details>
+    <summary>Dívidas e crédito</summary>
+    <div class="body"><ul class="clean">
+      <li>Cartão rotativo e cheque especial estão entre os juros mais altos do mercado. Evite ou quite primeiro.</li>
+      <li>Compare o Custo Efetivo Total (CET), não só o valor da parcela.</li>
+      <li>Para quitar: priorize a dívida de maior juros ou negocie prazos e taxas.</li>
+    </ul></div>
+  </details>
+  <details>
+    <summary>Juros compostos e inflação</summary>
+    <div class="body"><ul class="clean">
+      <li>Juros compostos incidem sobre o valor inicial e sobre os juros acumulados. Trabalham a favor de quem investe e contra quem deve.</li>
+      <li>Inflação é a perda do poder de compra ao longo do tempo. Um investimento só preserva patrimônio se render acima dela.</li>
+      <li>Diferencie rentabilidade nominal de rentabilidade real (descontada a inflação). A linha tracejada do simulador mostra essa diferença.</li>
+    </ul></div>
+  </details>
+  <details>
+    <summary>Investimentos e perfil de investidor</summary>
+    <div class="body"><ul class="clean">
+      <li>Risco e retorno andam juntos.</li>
+      <li>Analise rentabilidade, risco, liquidez, prazo e tributação.</li>
+      <li>Renda fixa (Tesouro Direto, CDB) tende a ser mais previsível. Renda variável (ações, fundos imobiliários) oscila mais.</li>
+      <li>Diversificar reduz o risco de concentração.</li>
+      <li>O perfil de investidor (conservador, moderado, arrojado) considera objetivos, prazo e tolerância a risco.</li>
+      <li>Promessas de ganho fácil, garantido ou rápido são sinais clássicos de golpe.</li>
+    </ul></div>
+  </details>
+  <details>
+    <summary>Planejamento de objetivos e longo prazo</summary>
+    <div class="body"><ul class="clean">
+      <li>Defina metas específicas, com valor e prazo (curto, médio e longo).</li>
+      <li>Planeje aposentadoria e proteção patrimonial (seguros, previdência) conforme a fase da vida.</li>
+      <li>Começar cedo pesa muito por causa dos juros compostos. Teste no simulador: mude só o prazo e observe.</li>
+    </ul></div>
+  </details>
+</section>
+
+<section id="glossario">
+  <h2>Glossário</h2>
+  <label for="busca" style="font:600 .9rem var(--sans);display:block;margin-bottom:6px">Buscar termo</label>
+  <input class="search" id="busca" type="search" placeholder="Ex.: liquidez">
+  <div class="tablewrap">
+    <table class="gloss" id="glossTable">
+      <thead><tr><th>Termo</th><th>Definição</th></tr></thead>
+      <tbody>
+        <tr><td>Orçamento</td><td>Plano que relaciona receitas e despesas em um período.</td></tr>
+        <tr><td>Receita</td><td>Todo o dinheiro que entra: salário, renda extra etc.</td></tr>
+        <tr><td>Despesa fixa e variável</td><td>Gasto de valor constante e gasto que muda a cada mês.</td></tr>
+        <tr><td>Reserva de emergência</td><td>Recurso líquido e seguro para imprevistos.</td></tr>
+        <tr><td>Liquidez</td><td>Facilidade e rapidez de transformar um ativo em dinheiro sem grande perda.</td></tr>
+        <tr><td>Juros simples</td><td>Juros calculados apenas sobre o valor inicial.</td></tr>
+        <tr><td>Juros compostos</td><td>Juros calculados sobre o valor inicial mais os juros acumulados.</td></tr>
+        <tr><td>Inflação</td><td>Aumento geral e contínuo de preços, que reduz o poder de compra.</td></tr>
+        <tr><td>IPCA</td><td>Índice oficial de inflação no Brasil, medido pelo IBGE.</td></tr>
+        <tr><td>Selic</td><td>Taxa básica de juros da economia brasileira.</td></tr>
+        <tr><td>CDI</td><td>Taxa de referência de muitos investimentos de renda fixa, próxima à Selic.</td></tr>
+        <tr><td>Rentabilidade real</td><td>Retorno do investimento descontada a inflação.</td></tr>
+        <tr><td>CET</td><td>Custo Efetivo Total: soma de juros, tarifas, tributos e encargos de um crédito.</td></tr>
+        <tr><td>Renda fixa</td><td>Investimentos com regras de remuneração definidas na contratação.</td></tr>
+        <tr><td>Renda variável</td><td>Investimentos sem retorno previamente definido, como ações.</td></tr>
+        <tr><td>Diversificação</td><td>Distribuir o dinheiro entre ativos diferentes para reduzir risco.</td></tr>
+        <tr><td>Perfil de investidor</td><td>Classificação da tolerância a risco e dos objetivos do investidor.</td></tr>
+        <tr><td>Tesouro Direto</td><td>Programa de venda de títulos públicos a pessoas físicas.</td></tr>
+        <tr><td>FGC</td><td>Fundo Garantidor de Créditos: protege depósitos e certos investimentos até um limite, se a instituição falhar.</td></tr>
+        <tr><td>Inadimplência</td><td>Atraso ou não pagamento de uma dívida.</td></tr>
+        <tr><td>Previdência privada</td><td>Produto de acumulação de recursos voltado a objetivos de longo prazo.</td></tr>
+      </tbody>
+    </table>
+    <div class="empty" id="glossEmpty">Nenhum termo encontrado. Tente outra palavra.</div>
+  </div>
+</section>
+
+<section id="reutilizaveis">
+  <h2>Prompts reutilizáveis</h2>
+  <p>Troque o que está entre colchetes e cole no NotebookLM sempre que quiser revisar o tema.</p>
+  <div class="prompts" id="promptGrid"></div>
+</section>
+
+<section id="reflexoes">
+  <h2>Reflexões finais</h2>
+  <div class="cols2">
+    <div><h3>O que aprendi sobre o tema</h3><span class="todo">Escreva com suas palavras.</span></div>
+    <div><h3>O que aprendi sobre estudar com IA</h3><span class="todo">Ex.: fontes bem escolhidas e prompts específicos melhoram muito a qualidade.</span></div>
+  </div>
+  <h3 style="margin-top:16px">Próximos passos</h3>
+  <span class="todo">Ex.: aprofundar em renda fixa e criar uma planilha de orçamento.</span>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Material educacional. Não constitui recomendação de investimento.</p>
+    <p>Feito com NotebookLM. <span class="todo" style="display:inline-block;margin:0">Seu nome, GitHub e LinkedIn</span></p>
+  </div>
+</footer>
+
+<script>
+/* tema */
+(function(){
+  var btn=document.getElementById('themeBtn');
+  try{var saved=localStorage.getItem('theme'); if(saved) document.documentElement.setAttribute('data-theme',saved);}catch(e){}
+  btn.addEventListener('click',function(){
+    var cur=document.documentElement.getAttribute('data-theme');
+    var isDark=cur?cur==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next=isDark?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    try{localStorage.setItem('theme',next);}catch(e){}
+  });
+})();
+
+/* simulador */
+(function(){
+  var brl=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+  var $=function(id){return document.getElementById(id)};
+  var ids=['inicial','aporte','taxa','infl','anos'];
+  function compact(v){
+    if(v>=1e6) return 'R$ '+(v/1e6).toFixed(1).replace('.',',')+' mi';
+    if(v>=1e3) return 'R$ '+Math.round(v/1e3)+' mil';
+    return 'R$ '+Math.round(v);
+  }
+  function path(pts){return pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)}).join(' ')}
+  function run(){
+    var P=+$('inicial').value, A=+$('aporte').value, r=+$('taxa').value/100, inf=+$('infl').value/100, Y=+$('anos').value;
+    $('o-inicial').textContent=brl.format(P);
+    $('o-aporte').textContent=brl.format(A);
+    $('o-taxa').textContent=$('taxa').value.replace('.',',')+'% a.a.';
+    $('o-infl').textContent=$('infl').value.replace('.',',')+'% a.a.';
+    $('o-anos').textContent=Y+(Y===1?' ano':' anos');
+    var im=Math.pow(1+r,1/12)-1, N=Y*12, bal=P, inv=P;
+    var B=[bal], C=[inv], R=[bal];
+    for(var m=1;m<=N;m++){
+      bal=bal*(1+im)+A; inv+=A;
+      B.push(bal); C.push(inv); R.push(bal/Math.pow(1+inf,m/12));
+    }
+    $('s-invest').textContent=brl.format(inv);
+    $('s-juros').textContent=brl.format(bal-inv);
+    $('s-final').textContent=brl.format(bal);
+    $('s-real').textContent=brl.format(R[N]);
+
+    var W=640,H=300,L=56,Rr=12,T=12,Bt=32, w=W-L-Rr, h=H-T-Bt;
+    var max=Math.max(bal,inv,1); var step=Math.pow(10,Math.floor(Math.log10(max))); 
+    var top=Math.ceil(max/step)*step; if(top/step<2) top=step*2;
+    var X=function(m){return L+(m/N)*w}, Yv=function(v){return T+h-(v/top)*h};
+    var s='';
+    for(var g=0;g<=4;g++){
+      var val=top*g/4, y=Yv(val);
+      s+='<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)"/>';
+      s+='<text x="'+(L-8)+'" y="'+(y+4)+'" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Bricolage Grotesque,system-ui,sans-serif">'+compact(val)+'</text>';
+    }
+    var every=Y<=10?1:(Y<=20?2:5);
+    for(var yr=0;yr<=Y;yr+=every){
+      s+='<text x="'+X(yr*12)+'" y="'+(H-10)+'" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Bricolage Grotesque,system-ui,sans-serif">'+yr+(yr===0?'':' a')+'</text>';
+    }
+    var pb=B.map(function(v,i){return [X(i),Yv(v)]}), pc=C.map(function(v,i){return [X(i),Yv(v)]}), pr=R.map(function(v,i){return [X(i),Yv(v)]});
+    var base=Yv(0);
+    s+='<path d="'+path(pb)+' L'+X(N)+' '+base+' L'+X(0)+' '+base+' Z" fill="var(--accent)" opacity=".16"/>';
+    s+='<path d="'+path(pc)+' L'+X(N)+' '+base+' L'+X(0)+' '+base+' Z" fill="var(--contrib)" opacity=".28"/>';
+    s+='<path d="'+path(pc)+'" fill="none" stroke="var(--contrib)" stroke-width="2"/>';
+    s+='<path d="'+path(pr)+'" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-dasharray="6 5"/>';
+    s+='<path d="'+path(pb)+'" fill="none" stroke="var(--accent)" stroke-width="3"/>';
+    $('chart').innerHTML=s;
+  }
+  ids.forEach(function(id){$(id).addEventListener('input',run)});
+  run();
+})();
+
+/* glossário */
+(function(){
+  var input=document.getElementById('busca'), rows=document.querySelectorAll('#glossTable tbody tr'), empty=document.getElementById('glossEmpty');
+  input.addEventListener('input',function(){
+    var q=input.value.trim().toLowerCase(), shown=0;
+    rows.forEach(function(r){
+      var ok=r.textContent.toLowerCase().indexOf(q)>-1;
+      r.style.display=ok?'':'none'; if(ok) shown++;
+    });
+    empty.style.display=shown?'none':'block';
+  });
+})();
+
+/* prompts reutilizáveis */
+(function(){
+  var list=[
+    ['Resumo','Faça um resumo estruturado sobre [TEMA], em tópicos, com base apenas nas fontes. Indique a fonte de cada ponto.'],
+    ['Explicação em níveis','Explique [CONCEITO] em três níveis: (1) para uma criança de 10 anos, (2) para um iniciante adulto, (3) com mais profundidade técnica. Use apenas as fontes.'],
+    ['Quiz de revisão','Crie 10 perguntas de múltipla escolha sobre [TEMA], com gabarito e uma breve justificativa para cada resposta, baseadas nas fontes.'],
+    ['Flashcards','Gere 15 flashcards (pergunta e resposta curta) com os principais termos de [TEMA].'],
+    ['Comparação','Compare [A] e [B] em uma tabela com os critérios: definição, vantagens, riscos e quando usar. Cite as fontes.'],
+    ['Exemplo prático','Crie um exemplo numérico simples que ilustre [CONCEITO], mostrando o cálculo passo a passo.'],
+    ['Estudo de caso','Proponha um cenário realista de uma pessoa com [SITUAÇÃO FINANCEIRA] e mostre como aplicar os princípios das fontes para resolvê-lo.'],
+    ['Checagem crítica','Liste as afirmações da sua última resposta que NÃO estão sustentadas diretamente pelas fontes e aponte lacunas ou divergências entre elas.'],
+    ['Plano de estudo','Monte um plano de estudo de 7 dias sobre [TEMA], com objetivo, leitura recomendada das fontes e uma atividade prática por dia.']
+  ];
+  var grid=document.getElementById('promptGrid');
+  list.forEach(function(p){
+    var card=document.createElement('article'); card.className='prompt';
+    var head=document.createElement('header');
+    var h=document.createElement('h3'); h.textContent=p[0];
+    var b=document.createElement('button'); b.type='button'; b.className='copy'; b.textContent='Copiar';
+    b.setAttribute('aria-label','Copiar o prompt '+p[0]);
+    head.appendChild(h); head.appendChild(b);
+    var pre=document.createElement('pre'); pre.textContent=p[1];
+    b.addEventListener('click',function(){
+      function done(msg){b.textContent=msg; setTimeout(function(){b.textContent='Copiar'},1600)}
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(p[1]).then(function(){done('Copiado')},function(){fallback()});
+      } else fallback();
+      function fallback(){
+        try{
+          var r=document.createRange(); r.selectNodeContents(pre);
+          var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+          done(document.execCommand('copy')?'Copiado':'Selecionado');
+        }catch(e){done('Selecionado')}
+      }
+    });
+    card.appendChild(head); card.appendChild(pre); grid.appendChild(card);
+  });
+})();
+</script>
+</body>
+</html>
